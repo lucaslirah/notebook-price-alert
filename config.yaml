@@ -1,0 +1,65 @@
+# =====================================================================
+# Configuração do monitor de preço de notebooks
+# =====================================================================
+# Edite este arquivo para ajustar seus critérios. Não precisa mexer no código.
+
+# Preço máximo que você aceita pagar (em R$). Alerta dispara se preço <= este valor.
+preco_maximo: 8000
+
+# Critérios de configuração desejada.
+# O robô só alerta notebooks que batam TODOS os critérios marcados como obrigatórios.
+config_alvo:
+  # GPU obrigatória: qualquer um destes termos precisa aparecer.
+  gpu:
+    - "rtx 5060"
+
+  # CPU obrigatória: pelo menos UM destes termos precisa aparecer.
+  cpu:
+    - "ryzen 7"
+    - "core i7"
+    - "i7"
+
+  # RAM desejada (verificada na página do produto quando disponível).
+  # Deixe a lista para exigir; comente para não exigir.
+  ram:
+    - "16gb"
+
+  # Armazenamento desejado (verificado na página do produto quando disponível).
+  ssd:
+    - "512gb"
+    - "1tb"
+
+  # Se true, exige confirmar RAM/SSD abrindo a página do produto.
+  # Se false, filtra apenas por GPU + CPU + preço na listagem (mais rápido, menos preciso).
+  exigir_ram_ssd: true
+
+  # Termos que DESCARTAM o item se aparecerem no título/specs.
+  # Útil porque buscas de loja (ex.: Kabum) misturam desktops e PCs gamer com
+  # a mesma config (Ryzen 7 + RTX 5060), que não são notebooks.
+  excluir_termos:
+    - "pc gamer"
+    - "desktop"
+    - "gabinete"
+    - "computador"
+    - "all in one"
+
+  # Termos obrigatórios (deixe vazio para não exigir). Atenção: a listagem da
+  # Avell nem sempre repete a palavra "notebook", então exigir isso globalmente
+  # descartaria a Avell. Por padrão fica vazio e usamos apenas excluir_termos.
+  exigir_termos: []
+
+# Lojas a monitorar. Cada loja usa um "adaptador" (leitor) definido em stores/.
+# 'habilitado: false' desliga a loja sem apagar a config.
+lojas:
+  - nome: "Avell"
+    adaptador: "avell"
+    habilitado: true
+    urls_busca:
+      - "https://avell.com.br/notebooks"
+
+  # ----- Kabum: via navegador headless (Playwright). Ver README. -----
+  - nome: "Kabum"
+    adaptador: "kabum"
+    habilitado: true
+    urls_busca:
+      - "https://www.kabum.com.br/busca/notebook-rtx-5060"
