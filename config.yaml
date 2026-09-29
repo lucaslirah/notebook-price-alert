@@ -4,7 +4,7 @@
 # Edite este arquivo para ajustar seus critérios. Não precisa mexer no código.
 
 # Preço máximo que você aceita pagar (em R$). Alerta dispara se preço <= este valor.
-preco_maximo: 8000
+preco_maximo: 8500
 
 # Critérios de configuração desejada.
 # O robô só alerta notebooks que batam TODOS os critérios marcados como obrigatórios.
