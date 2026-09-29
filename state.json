@@ -1,1 +1,12 @@
-{}
+{
+  "https://avell.com.br/storm-560-amd-ryzen-7-255-rtx5060": {
+    "preco_notificado": 7999.0,
+    "nome": "Avell STORM 560",
+    "menor_preco": 7999.0
+  },
+  "https://www.kabum.com.br/produto/1033358/notebook-asus-tuf-gaming-f16-intel-core-i5-14a-geracao-16gb-ram-rtx-5060-ssd-512gb-tela-16-led-fhd-nivel-ips-windows-11-home-jaeger-gray": {
+    "preco_notificado": 8414.15,
+    "nome": " Notebook Asus Tuf Gaming F16, Intel Core i5 14a Geração, 16GB RAM, RTX 5060, SSD 512GB, Tela 16\" LED Fhd+ Nível Ips, WINDOWS 11 Home, Jaeger Gray",
+    "menor_preco": 8414.15
+  }
+}
