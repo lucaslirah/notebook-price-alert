@@ -78,3 +78,15 @@ lojas:
     habilitado: true
     urls_busca:
       - "https://www.kabum.com.br/busca/notebook-rtx-5060"
+
+# =====================================================================
+# Pesos da análise de desempenho (opcional).
+# O score (0-100) é uma ESTIMATIVA por tabela de specs, não benchmark real.
+# Ajuste o que você mais valoriza. Os valores são relativos entre si.
+# =====================================================================
+pesos_analise:
+  gpu: 0.40    # placa de vídeo (mais importante em notebook gamer)
+  cpu: 0.25    # processador
+  ram: 0.15    # memória RAM
+  ssd: 0.12    # armazenamento
+  tela: 0.08   # taxa de atualização (Hz)

@@ -118,6 +118,52 @@ config_alvo:
 4. Envia alerta no Telegram e grava o preço em `state.json` para **não repetir** o
    mesmo alerta (só avisa de novo se o preço mudar).
 
+## 5b. Análise de desempenho e custo-benefício
+
+Além de avisar o preço, o bot **analisa e compara** os notebooks encontrados:
+
+- **Score de desempenho (0–100):** estimativa a partir das specs (GPU, CPU, RAM,
+  SSD, tela), com pesos ajustáveis em `config.yaml` (`pesos_analise`).
+- **Custo-benefício (R$/ponto):** preço ÷ score. Menor = melhor. Responde "qual
+  compensa mais", não só "qual é o mais barato".
+- **Ranking comparativo:** quando há vários candidatos, destaca 🏆 melhor
+  custo-benefício, 💪 mais potente e 💵 mais barato, e lista as demais opções.
+- **Veredito de preço:** compara com o histórico que o próprio bot coletou
+  ("menor preço já visto" / "já esteve mais barato"). Fica mais útil com o tempo,
+  conforme o `state.json` acumula preços.
+
+> ⚠️ **O score é uma estimativa por tabela de specs, não um benchmark real**
+> (Cinebench, FPS, etc.). Serve para comparar opções entre si de forma
+> consistente, não como medição de laboratório. Isso vem escrito na própria
+> mensagem do Telegram.
+
+Exemplo de mensagem:
+
+```
+🔔 2 notebooks na sua faixa!
+
+🏆 MELHOR CUSTO-BENEFÍCIO
+Avell STORM 560  🆕
+   Avell · R$ 7.999,00
+   ⚙️ RTX 5060 · RYZEN 7 · 16GB · 512GB · 144Hz
+   📊 Desempenho: 69/100 · R$ 116/ponto
+   🆕 primeira vez que vejo este modelo
+
+📋 Outras opções (por custo-benefício):
+• Notebook Asus TUF F16 ... — R$ 8.414,15 · 58/100 · R$ 145/pt
+```
+
+Para valorizar mais uma peça, edite os pesos:
+
+```yaml
+pesos_analise:
+  gpu: 0.40   # aumente para priorizar placa de vídeo
+  cpu: 0.25
+  ram: 0.15
+  ssd: 0.12
+  tela: 0.08
+```
+
 ---
 
 ## 6. Adicionar mais lojas
@@ -164,6 +210,7 @@ notebook-price-alert/
 ├── .github/workflows/monitor.yml  # agendamento no GitHub Actions (cron */30)
 ├── config.yaml                    # seus critérios (edite aqui)
 ├── monitor.py                     # núcleo: filtro, preço, anti-spam
+├── analise.py                     # score de desempenho + custo-benefício + ranking
 ├── notifier.py                    # envio Telegram
 ├── requirements.txt
 ├── state.json                     # último preço notificado (anti-spam)

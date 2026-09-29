@@ -19,6 +19,7 @@ import unicodedata
 import yaml
 
 import notifier
+import analise
 from stores import get_adapter
 
 CONFIG_PATH = os.environ.get("CONFIG_PATH", "config.yaml")
@@ -118,6 +119,43 @@ def deve_notificar(estado: dict, url: str, preco: float) -> bool:
     return anterior is None or abs(anterior - preco) >= 0.01
 
 
+def _fmt_brl(valor: float) -> str:
+    """R$ no padrão brasileiro: 7999.0 -> R$ 7.999,00"""
+    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def veredito_preco(estado: dict, url: str, preco: float) -> tuple[str, float | None]:
+    """Compara o preço atual com o histórico coletado pelo bot.
+
+    Retorna (texto_veredito, menor_ja_visto). O menor histórico é atualizado
+    depois, em registrar_estado().
+    """
+    hist = estado.get(url, {})
+    menor = hist.get("menor_preco")
+    if menor is None:
+        return ("🆕 primeira vez que vejo este modelo", None)
+    if preco < menor - 0.01:
+        return (f"✅ menor preço já visto! (antes: {_fmt_brl(menor)})", menor)
+    if abs(preco - menor) <= 0.01:
+        return ("✅ empatado com o menor preço já visto", menor)
+    diff = preco - menor
+    return (
+        f"⚠️ já esteve mais barato: {_fmt_brl(menor)} (agora {_fmt_brl(diff)} acima)",
+        menor,
+    )
+
+
+def registrar_estado(estado: dict, url: str, preco: float, nome: str) -> None:
+    """Atualiza último preço notificado e o menor preço já visto."""
+    hist = estado.get(url, {})
+    menor = hist.get("menor_preco")
+    estado[url] = {
+        "preco_notificado": preco,
+        "nome": nome,
+        "menor_preco": preco if menor is None else min(menor, preco),
+    }
+
+
 # --------------------------------------------------------------------------- #
 # Núcleo
 # --------------------------------------------------------------------------- #
@@ -165,10 +203,11 @@ def confirmar_config_detalhada(produto: dict, config_alvo: dict) -> bool:
 def rodar(config: dict, dry_run: bool = False) -> list[dict]:
     preco_max = float(config["preco_maximo"])
     config_alvo = config["config_alvo"]
+    pesos = config.get("pesos_analise")
     estado = carregar_estado()
 
-    ofertas_enviadas = []
-
+    # 1) Coletar TODAS as ofertas qualificadas (config + preço) de todas as lojas.
+    candidatos = []
     for loja in config.get("lojas", []):
         if not loja.get("habilitado", True):
             continue
@@ -177,41 +216,52 @@ def rodar(config: dict, dry_run: bool = False) -> list[dict]:
         # nunca exige RAM/SSD — isso é confirmado depois na página do produto.
         criterios_listagem = {**config_alvo, "exigir_ram_ssd": False}
         for produto in coletar_produtos(loja):
-            # 1) filtro barato na listagem: gpu + cpu
             if not bate_criterios(produto["config_texto"], criterios_listagem):
                 continue
-            # 2) preço
             if produto["preco"] > preco_max:
                 continue
-            # 3) confirmação de RAM/SSD (abre página do produto se exigido)
             if config_alvo.get("exigir_ram_ssd"):
                 if not confirmar_config_detalhada(produto, config_alvo):
                     continue
+            candidatos.append(produto)
 
-            # anti-spam
-            if not deve_notificar(estado, produto["url"], produto["preco"]):
-                print(f"  = já notificado: {produto['nome']} (R$ {produto['preco']:.2f})")
-                continue
+    # 2) Anti-spam: só considera "novidade" quem nunca foi notificado ou mudou de preço.
+    novos = [p for p in candidatos if deve_notificar(estado, p["url"], p["preco"])]
+    for p in candidatos:
+        if p not in novos:
+            print(f"  = já notificado: {p['nome']} (R$ {p['preco']:.2f})")
 
-            # resumo curto das specs para a mensagem (evita despejar a página toda)
-            produto["config_texto"] = resumir_specs(produto["config_texto"])
-            msg = notifier.format_deal(produto)
-            print(f"  ★ OFERTA: {produto['nome']} — R$ {produto['preco']:.2f}")
-            if dry_run:
-                print("    [dry-run] mensagem que seria enviada:")
-                print("    " + msg.replace("\n", "\n    "))
-            else:
-                notifier.send_message(msg)
+    if not novos:
+        print("Nenhuma oferta nova.")
+        if not dry_run:
+            # Ainda assim atualiza histórico de menor preço dos candidatos vistos.
+            for p in candidatos:
+                registrar_estado(estado, p["url"], p["preco"], p["nome"])
+            salvar_estado(estado)
+        return []
 
-            estado[produto["url"]] = {
-                "preco_notificado": produto["preco"],
-                "nome": produto["nome"],
-            }
-            ofertas_enviadas.append(produto)
+    # 3) Analisar (score + custo-benefício) e rankear.
+    analisados = [analise.analisar(p, pesos) for p in candidatos]
+    novos_urls = {p["url"] for p in novos}
+    # veredito de preço para cada um (antes de atualizar o histórico)
+    for o in analisados:
+        texto, _menor = veredito_preco(estado, o["url"], o["preco"])
+        o["veredito"] = texto
+    ranking = analise.rankear(analisados)
 
-    if not dry_run:
+    # 4) Montar a mensagem comparativa e enviar.
+    msg = notifier.format_analise(ranking, analisados, novos_urls)
+    print(f"  ★ {len(novos)} oferta(s) nova(s); {len(analisados)} candidato(s) na análise.")
+    if dry_run:
+        print("    [dry-run] mensagem que seria enviada:")
+        print("    " + msg.replace("\n", "\n    "))
+    else:
+        notifier.send_message(msg)
+        for p in candidatos:
+            registrar_estado(estado, p["url"], p["preco"], p["nome"])
         salvar_estado(estado)
-    return ofertas_enviadas
+
+    return novos
 
 
 def carregar_config() -> dict:
