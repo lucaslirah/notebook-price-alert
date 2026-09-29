@@ -12,17 +12,32 @@ config_alvo:
   # GPU obrigatória: qualquer um destes termos precisa aparecer.
   gpu:
     - "rtx 5060"
+    - "rtx5060"
+    - "rtx 5070"
+    - "rtx5070"
 
   # CPU obrigatória: pelo menos UM destes termos precisa aparecer.
   cpu:
+    - "ryzen 5"
+    - "ryzen5"
     - "ryzen 7"
+    - "ryzen7"
+    - "ryzen 9"
+    - "ryzen9"
+    - "core i5"
+    - "i5"
     - "core i7"
     - "i7"
+    - "intel core ultra 5"
+    - "intel core ultra 7"
+    - "intel ultra 5"
+    - "intel ultra 7"
 
   # RAM desejada (verificada na página do produto quando disponível).
   # Deixe a lista para exigir; comente para não exigir.
   ram:
     - "16gb"
+    - "32gb"
 
   # Armazenamento desejado (verificado na página do produto quando disponível).
   ssd:
