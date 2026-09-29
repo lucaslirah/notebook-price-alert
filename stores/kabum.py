@@ -59,11 +59,28 @@ def scrape(url_busca: str) -> list[dict]:
 
     produtos = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-blink-features=AutomationControlled"],
+        )
         try:
-            page = browser.new_page(user_agent=USER_AGENT)
-            page.goto(url_busca, wait_until="networkidle", timeout=60000)
-            page.wait_for_timeout(3000)  # dá tempo para os cards renderizarem
+            page = browser.new_page(
+                user_agent=USER_AGENT,
+                viewport={"width": 1366, "height": 900},
+                locale="pt-BR",
+            )
+            page.goto(url_busca, wait_until="domcontentloaded", timeout=60000)
+            # Espera explicitamente os cards de produto aparecerem (mais confiável
+            # que um sleep fixo, sobretudo no ambiente headless da nuvem).
+            try:
+                page.wait_for_selector("a[href*='/produto/']", timeout=30000)
+            except Exception:
+                pass
+            # Faz scroll para forçar carregamento de itens lazy-loaded.
+            for _ in range(5):
+                page.mouse.wheel(0, 4000)
+                page.wait_for_timeout(800)
+            page.wait_for_timeout(1500)
             itens = page.evaluate(_EXTRACT_JS)
         finally:
             browser.close()

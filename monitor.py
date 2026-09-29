@@ -175,6 +175,7 @@ def coletar_produtos(loja: dict) -> list[dict]:
         for p in encontrados:
             p["loja"] = loja["nome"]
             p["adaptador"] = loja["adaptador"]
+        print(f"  {loja['nome']}: {len(encontrados)} produto(s) na página '{url}'")
         produtos.extend(encontrados)
     return produtos
 
