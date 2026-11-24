@@ -1,0 +1,11 @@
+[Unit]
+Description=Monitor de preço de notebooks, a cada 5 minutos
+Wants=notebook-alert-inhibit.service
+
+[Timer]
+OnActiveSec=5s
+OnUnitActiveSec=5min
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

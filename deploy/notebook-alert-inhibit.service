@@ -1,0 +1,6 @@
+[Unit]
+Description=Impede o notebook de suspender enquanto o monitor está ligado
+PartOf=notebook-alert.timer
+
+[Service]
+ExecStart=/usr/bin/systemd-inhibit --what=sleep:idle:handle-lid-switch --who="Monitor de notebooks" --why="Monitorando ofertas" --mode=block /usr/bin/sleep infinity

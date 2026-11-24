@@ -63,6 +63,31 @@ Pronto. O robô vai rodar a cada 5 minutos automaticamente.
 
 ---
 
+## 2b. Rodar neste notebook (a cada 5 minutos de verdade)
+
+O agendador do GitHub Actions é lento e irregular (execuções a cada várias horas,
+mesmo com `*/5`). Para monitorar de 5 em 5 minutos, rode o monitor numa máquina
+sua, como serviço de usuário do systemd:
+
+```bash
+deploy/instalar.sh      # uma vez: instala o timer e cria o atalho na área de trabalho
+```
+
+Depois use o atalho **"Monitor de Notebooks (ligar/desligar)"** da área de
+trabalho. No primeiro uso ele pede o token e o chat ID do Telegram (ficam em
+`~/.config/notebook-price-alert/env`, modo 600, fora do repositório) e envia uma
+mensagem de teste. Ligado, ele varre a cada 5 min e **impede o notebook de
+suspender**; desligado, tudo volta ao normal.
+
+- O estado (anti-spam) fica em `~/.local/share/notebook-price-alert/state.json`,
+  separado do `state.json` do repositório.
+- Logs: `journalctl --user -u notebook-alert -f`
+- Para não duplicar alertas, desligue o agendamento do GitHub:
+  `gh workflow disable monitor.yml` (religar: `gh workflow enable monitor.yml`).
+- Se a tampa fechar ou a bateria acabar, o monitoramento para.
+
+---
+
 ## 3. Testar o Telegram isoladamente
 
 No seu PC (com Python 3.10+):
@@ -249,6 +274,7 @@ notebook-price-alert/
 ├── gerar_sessao_telegram.py       # gera TELEGRAM_SESSION (grupos privados)
 ├── requirements.txt / requirements-dev.txt
 ├── state.json                     # último preço notificado (anti-spam)
+├── deploy/                        # serviço systemd + atalho liga/desliga
 ├── tests/                         # pytest
 └── stores/                        # um adaptador por fonte
     ├── benchpromos.py  qnc.py  avell.py  kabum.py

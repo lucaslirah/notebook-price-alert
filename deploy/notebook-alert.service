@@ -1,0 +1,9 @@
+[Unit]
+Description=Monitor de preço de notebooks (uma varredura)
+
+[Service]
+Type=oneshot
+WorkingDirectory=@REPO@
+EnvironmentFile=%h/.config/notebook-price-alert/env
+ExecStart=@REPO@/.venv/bin/python monitor.py
+TimeoutStartSec=300
