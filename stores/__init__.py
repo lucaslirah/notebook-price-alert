@@ -1,23 +1,33 @@
 """Registro de adaptadores de loja.
 
-Cada adaptador é uma função que recebe uma URL de busca e retorna uma lista de
+Cada adaptador é uma função scrape(url_busca, **opcoes) que retorna uma lista de
 dicionários de produto no formato:
 
     {
         "nome": str,          # título do notebook
         "preco": float,       # preço em reais
         "url": str,           # link do produto
-        "config_texto": str,  # texto bruto com specs (gpu/cpu/tela...) para filtro
+        "config_texto": str,  # texto bruto com specs (gpu/cpu/ram/ssd...) para filtro
     }
 
-Para adicionar uma loja nova: crie stores/<nome>.py com uma função scrape(url) e
-registre-a em ADAPTERS abaixo.
+Campos opcionais: "loja" (loja real, quando a fonte é um agregador), "chave"
+(identificador estável para o anti-spam; padrão = url), "cupom", "historico"
+({min, mediana, dias, ...}) e "outras_lojas".
+
+"opcoes" vem de 'opcoes:' da loja no config.yaml (ex.: max_paginas, horas).
+
+Para adicionar uma fonte nova: crie stores/<nome>.py com scrape() e registre-a
+em ADAPTERS abaixo.
 """
-from stores import avell, kabum
+from stores import avell, benchpromos, kabum, qnc, telegram_canal, telegram_grupo
 
 ADAPTERS = {
     "avell": avell.scrape,
     "kabum": kabum.scrape,
+    "benchpromos": benchpromos.scrape,
+    "qnc": qnc.scrape,
+    "telegram_canal": telegram_canal.scrape,
+    "telegram_grupo": telegram_grupo.scrape,
 }
 
 

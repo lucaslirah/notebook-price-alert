@@ -15,7 +15,7 @@ from stores.base import fetch_html, parse_preco_brl
 BASE_URL = "https://avell.com.br"
 
 
-def scrape(url_busca: str) -> list[dict]:
+def scrape(url_busca: str, **_) -> list[dict]:
     """Lê uma página de listagem e retorna os produtos encontrados."""
     html = fetch_html(url_busca)
     soup = BeautifulSoup(html, "html.parser")

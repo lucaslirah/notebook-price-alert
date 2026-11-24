@@ -2,8 +2,9 @@ name: Monitor de preço de notebooks
 
 on:
   schedule:
-    # Roda a cada 30 minutos. Horário em UTC (o cron do GitHub usa UTC).
-    - cron: "*/30 * * * *"
+    # A cada 5 minutos (o mínimo do GitHub Actions). Horário em UTC. O GitHub
+    # costuma atrasar execuções agendadas em horários de pico: não é exato.
+    - cron: "*/5 * * * *"
   # Permite disparar manualmente pela aba Actions do GitHub.
   workflow_dispatch:
 
@@ -19,6 +20,7 @@ concurrency:
 jobs:
   monitorar:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
@@ -32,16 +34,34 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
-      - name: Instalar navegador do Playwright (para a Kabum)
-        run: python -m playwright install --with-deps chromium
+      # O navegador só é necessário se a Kabum direta estiver habilitada (lento).
+      - name: Instalar navegador do Playwright (se Kabum direta estiver ligada)
+        run: |
+          if python - <<'PY'
+          import sys, yaml
+          cfg = yaml.safe_load(open("config.yaml", encoding="utf-8"))
+          ligado = any(l.get("adaptador") == "kabum" and l.get("habilitado", True)
+                       for l in cfg.get("lojas", []))
+          sys.exit(0 if ligado else 1)
+          PY
+          then
+            python -m playwright install --with-deps chromium
+          else
+            echo "Kabum direta desligada; pulando o Playwright."
+          fi
 
       - name: Rodar monitor
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Opcionais: só para ler grupos PRIVADOS do Telegram (veja o README).
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
         run: python monitor.py
 
       - name: Persistir estado (anti-spam)
+        if: always()
         run: |
           if [ -z "$(git status --porcelain state.json)" ]; then
             echo "state.json sem alterações; nada a commitar."
@@ -52,7 +72,6 @@ jobs:
           git add state.json
           git commit -m "chore: atualiza state.json [skip ci]"
           # Puxa mudanças remotas antes de empurrar (evita erro 'fetch first').
-          # Tenta algumas vezes caso o main avance nesse meio-tempo.
           for i in 1 2 3; do
             git pull --rebase --autostash origin main || true
             if git push origin main; then

@@ -13,14 +13,16 @@ HEADERS = {
 }
 
 _PRICE_RE = re.compile(r"R\$\s*([\d.]+,\d{2})")
+# Preço com ou sem centavos: "R$ 6.199", "R$7799", "R$ 7.999,00".
+_PRICE_ANY_RE = re.compile(r"R\$\s*(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{2}))?")
 
 
-def fetch_html(url: str, timeout: int = 30) -> str:
+def fetch_html(url: str, timeout: int = 30, params: dict | None = None) -> str:
     """Baixa o HTML de uma URL com retry simples."""
     last_exc = None
     for tentativa in range(3):
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=timeout)
+            resp = requests.get(url, headers=HEADERS, timeout=timeout, params=params)
             resp.raise_for_status()
             return resp.text
         except requests.RequestException as exc:
@@ -42,3 +44,14 @@ def parse_preco_brl(texto: str):
         return float(valor)
     except ValueError:
         return None
+
+
+def parse_precos_brl(texto: str) -> list[float]:
+    """Todos os preços 'R$ ...' do texto (com ou sem centavos), na ordem."""
+    precos = []
+    for inteiro, centavos in _PRICE_ANY_RE.findall(texto):
+        try:
+            precos.append(float(inteiro.replace(".", "") + "." + (centavos or "00")))
+        except ValueError:
+            continue
+    return precos

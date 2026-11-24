@@ -3,54 +3,48 @@
 # =====================================================================
 # Edite este arquivo para ajustar seus critérios. Não precisa mexer no código.
 
-# Preço máximo que você aceita pagar (em R$). Alerta dispara se preço <= este valor.
-preco_maximo: 8500
+# Teto: nada acima disso gera alerta (R$).
+preco_maximo: 10000
+
+# Faixa ideal: ofertas até este valor ganham 🔥 e um cabeçalho próprio no alerta.
+preco_ideal: 8000
 
 # Critérios de configuração desejada.
-# O robô só alerta notebooks que batam TODOS os critérios marcados como obrigatórios.
 config_alvo:
-  # GPU obrigatória: qualquer um destes termos precisa aparecer.
+  # GPU obrigatória: pelo menos UM destes termos precisa aparecer (palavra inteira).
+  # Todas as RTX 50 mobile de 5060 para cima. 5050 fica de fora (capada).
   gpu:
     - "rtx 5060"
-    - "rtx5060"
-    - "rtx 5070"
-    - "rtx5070"
+    - "rtx 5070"      # também casa "rtx 5070 ti"
+    - "rtx 5080"
+    - "rtx 5090"
 
-  # CPU obrigatória: pelo menos UM destes termos precisa aparecer.
+  # CPU obrigatória: pelo menos UM destes termos precisa aparecer (palavra inteira).
   cpu:
     - "ryzen 5"
-    - "ryzen5"
     - "ryzen 7"
-    - "ryzen7"
     - "ryzen 9"
-    - "ryzen9"
-    - "core i5"
+    - "ryzen ai"
     - "i5"
-    - "core i7"
     - "i7"
-    - "intel core ultra 5"
-    - "intel core ultra 7"
-    - "intel ultra 5"
-    - "intel ultra 7"
+    - "i9"
+    - "core 7"
+    - "ultra 5"
+    - "ultra 7"
+    - "ultra 9"
 
-  # RAM desejada (verificada na página do produto quando disponível).
-  # Deixe a lista para exigir; comente para não exigir.
-  ram:
-    - "16gb"
-    - "32gb"
+  # Mínimos numéricos de RAM e SSD (em GB). Valor detectado abaixo do mínimo
+  # sempre reprova. Comente a linha para não exigir.
+  ram_min_gb: 16
+  ssd_min_gb: 512
 
-  # Armazenamento desejado (verificado na página do produto quando disponível).
-  ssd:
-    - "512gb"
-    - "1tb"
-
-  # Se true, exige confirmar RAM/SSD abrindo a página do produto.
-  # Se false, filtra apenas por GPU + CPU + preço na listagem (mais rápido, menos preciso).
+  # true  = confirma RAM/SSD abrindo a página do produto, quando a fonte
+  #         permite (Avell), e marca "não confirmado" no alerta quando o anúncio
+  #         não informa RAM/SSD.
+  # false = não marca nada; só descarta o que for detectado abaixo do mínimo.
   exigir_ram_ssd: true
 
   # Termos que DESCARTAM o item se aparecerem no título/specs.
-  # Útil porque buscas de loja (ex.: Kabum) misturam desktops e PCs gamer com
-  # a mesma config (Ryzen 7 + RTX 5060), que não são notebooks.
   excluir_termos:
     - "pc gamer"
     - "desktop"
@@ -58,35 +52,84 @@ config_alvo:
     - "computador"
     - "all in one"
 
-  # Termos obrigatórios (deixe vazio para não exigir). Atenção: a listagem da
-  # Avell nem sempre repete a palavra "notebook", então exigir isso globalmente
-  # descartaria a Avell. Por padrão fica vazio e usamos apenas excluir_termos.
+  # Termos obrigatórios (deixe vazio para não exigir).
   exigir_termos: []
 
-# Lojas a monitorar. Cada loja usa um "adaptador" (leitor) definido em stores/.
-# 'habilitado: false' desliga a loja sem apagar a config.
+# Regras do anti-spam.
+alertas:
+  queda_minima_reais: 30     # só reavisa o mesmo item se o preço cair pelo menos isso
+  realertar_apos_horas: 12   # item que sumiu e voltou depois de tanto tempo avisa de novo
+
+# Fontes a monitorar. Cada fonte usa um "adaptador" definido em stores/.
+# 'habilitado: false' desliga a fonte sem apagar a config.
+# 'opcoes' são repassadas ao adaptador.
 lojas:
+  # Agregador com TODAS as lojas (Amazon, Kabum, ML, Magalu, marcas) + cupons.
+  - nome: "Bench Promos"
+    adaptador: "benchpromos"
+    habilitado: true
+    urls_busca:
+      - "https://benchpromos.com.br/notebooks"
+    opcoes:
+      max_paginas: 14
+
+  # Agregador com histórico de preço de ~4 meses (diz se o preço é bom de verdade).
+  - nome: "Qual Notebook Comprar"
+    adaptador: "qnc"
+    habilitado: true
+    urls_busca:
+      - "https://quenotebookcomprar.com.br/ofertas/?_sfm_spec_laptop_category=Gamer&post_types=notebooks&sort_order=_sfm_price_diff_percent+asc+num&_sft_product_availability=in-stock"
+    opcoes:
+      max_paginas: 8
+
   - nome: "Avell"
     adaptador: "avell"
     habilitado: true
     urls_busca:
       - "https://avell.com.br/notebooks"
 
-  # ----- Kabum: via navegador headless (Playwright). Ver README. -----
+  # Canais PÚBLICOS do Telegram (sem login). Adicione os seus em urls_busca
+  # ("@canal" ou "https://t.me/canal"). 'horas' = janela de mensagens recentes.
+  - nome: "Telegram (canais públicos)"
+    adaptador: "telegram_canal"
+    habilitado: true
+    urls_busca:
+      - "https://t.me/qualnotebook"
+      - "https://t.me/BenchPromos"
+      - "https://t.me/TJGOFERTASs"
+      # O link que você passou (GarimpeirosOfertas) é o grupo de CONVERSA e não tem
+      # prévia pública. As ofertas ficam neste canal:
+      - "https://t.me/garimpeirosoficial"
+    opcoes:
+      horas: 3
+
+  # Grupos/canais PRIVADOS do Telegram (usa a sua conta; veja o README).
+  # Precisa dos secrets TELEGRAM_API_ID, TELEGRAM_API_HASH e TELEGRAM_SESSION.
+  - nome: "Telegram (meus grupos)"
+    adaptador: "telegram_grupo"
+    habilitado: false
+    urls_busca: []     # ex.: "@meugrupo", "https://t.me/+AbC..." não funciona; use @usuario ou id -100...
+    opcoes:
+      horas: 3
+
+  # Kabum direto via navegador headless (Playwright). Desligado de propósito: o
+  # Bench Promos já traz os preços da Kabum, e o navegador deixa cada execução
+  # ~1 min mais lenta (inviável a cada 5 min). Ligue se quiser a busca própria.
   - nome: "Kabum"
     adaptador: "kabum"
-    habilitado: true
+    habilitado: false
     urls_busca:
       - "https://www.kabum.com.br/busca/notebook-rtx-5060"
 
 # =====================================================================
 # Pesos da análise de desempenho (opcional).
 # O score (0-100) é uma ESTIMATIVA por tabela de specs, não benchmark real.
-# Ajuste o que você mais valoriza. Os valores são relativos entre si.
+# Os valores são relativos entre si.
 # =====================================================================
 pesos_analise:
   gpu: 0.40    # placa de vídeo (mais importante em notebook gamer)
-  cpu: 0.25    # processador
+  cpu: 0.25    # processador (HX ganha bônus)
   ram: 0.15    # memória RAM
   ssd: 0.12    # armazenamento
   tela: 0.08   # taxa de atualização (Hz)
+  vram: 0.10   # memória da GPU: pesa na longevidade

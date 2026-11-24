@@ -47,7 +47,7 @@ _EXTRACT_JS = r"""
 """
 
 
-def scrape(url_busca: str) -> list[dict]:
+def scrape(url_busca: str, **_) -> list[dict]:
     """Carrega a busca da Kabum com Playwright e retorna os produtos."""
     try:
         from playwright.sync_api import sync_playwright

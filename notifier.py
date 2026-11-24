@@ -4,6 +4,8 @@ import html
 
 import requests
 
+from analise import chave as analise_chave
+
 TELEGRAM_API = "https://api.telegram.org/bot{token}/sendMessage"
 
 
@@ -36,45 +38,24 @@ def send_message(text: str) -> None:
     resp.raise_for_status()
 
 
-def format_deal(produto: dict) -> str:
-    """Monta a mensagem de um notebook que bateu os critérios."""
-    nome = html.escape(produto["nome"])
-    loja = html.escape(produto["loja"])
-    preco = produto["preco"]
-    url = html.escape(produto["url"], quote=True)
-    config = html.escape(produto.get("config_texto", ""))
-
-    linhas = [
-        "🔔 <b>Notebook em oferta!</b>",
-        "",
-        f"🏷️ <b>{nome}</b>",
-        f"🏬 Loja: {loja}",
-        f"💰 Preço: <b>R$ {preco:,.2f}</b>".replace(",", "X").replace(".", ",").replace("X", "."),
-    ]
-    if config:
-        linhas.append(f"⚙️ Config: {config}")
-    linhas.append("")
-    linhas.append(f'🔗 <a href="{url}">Ver oferta</a>')
-    return "\n".join(linhas)
-
-
 def _brl(valor: float) -> str:
     """Formata número como moeda brasileira: 7999.0 -> 7.999,00"""
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def _linha_oferta(o: dict, novo: bool) -> str:
+def _linha_oferta(o: dict, novo: bool, preco_ideal: float | None = None) -> str:
     nome = html.escape(o["nome"][:70])
     loja = html.escape(o.get("loja", ""))
     url = html.escape(o["url"], quote=True)
     specs = o.get("specs", {})
     partes = []
     if specs.get("gpu"):
-        partes.append(specs["gpu"].upper())
+        vram = f" {specs['vram_gb']}GB" if specs.get("vram_gb") else ""
+        partes.append(specs["gpu"].upper() + vram)
     if specs.get("cpu"):
-        partes.append(specs["cpu"].upper())
+        partes.append(specs["cpu"].upper() + (" HX" if specs.get("hx") else ""))
     if specs.get("ram_gb"):
-        partes.append(f"{specs['ram_gb']}GB")
+        partes.append(f"{specs['ram_gb']}GB RAM")
     if specs.get("ssd_gb"):
         ssd = specs["ssd_gb"]
         partes.append(f"{ssd // 1024}TB" if ssd >= 1024 else f"{ssd}GB")
@@ -84,26 +65,44 @@ def _linha_oferta(o: dict, novo: bool) -> str:
     cb = o.get("custo_beneficio")
     cb_txt = f" · R$ {cb:.0f}/ponto".replace(".", ",") if cb else ""
     tag = " 🆕" if novo else ""
+    fogo = "🔥 " if preco_ideal and o["preco"] <= preco_ideal else ""
+    cupom = f" · 🎟 <code>{html.escape(o['cupom'])}</code>" if o.get("cupom") else ""
     linhas = [
         f'🔗 <a href="{url}">{nome}</a>{tag}',
-        f"   {loja} · <b>{_brl(o['preco'])}</b>",
-        f"   ⚙️ {cfg}",
+        f"   {loja} · {fogo}<b>{_brl(o['preco'])}</b>{cupom}",
+        f"   ⚙ {cfg}",
         f"   📊 Desempenho: <b>{o.get('score', 0)}/100</b>{cb_txt}",
     ]
     if o.get("veredito"):
         linhas.append(f"   {html.escape(o['veredito'])}")
+    if specs.get("sem_windows"):
+        linhas.append("   ⚠ vem sem Windows (Linux): some o custo da licença")
+    if not o.get("confirmado", True):
+        linhas.append("   ⚠ RAM/SSD não confirmados no anúncio: confira antes de comprar")
     return "\n".join(linhas)
 
 
-def format_analise(ranking: dict, todos: list[dict], novos_urls: set) -> str:
+LIMITE_TELEGRAM = 4000  # o máximo da API é 4096 caracteres
+
+
+def format_analise(ranking: dict, todos: list[dict], novos_chaves: set,
+                   preco_ideal: float | None = None) -> str:
     """Monta a mensagem comparativa com destaques e ranking.
 
     ranking: dict com 'melhor_cb', 'mais_potente', 'mais_barato', 'ranking'.
     todos: lista de ofertas já analisadas.
-    novos_urls: set de URLs que são novidade (mudaram de preço/novos).
+    novos_chaves: chaves (analise.chave) das ofertas novas nesta verificação.
+    preco_ideal: ofertas até este valor ganham 🔥.
     """
-    n_novos = len([o for o in todos if o["url"] in novos_urls])
-    cab = "🔔 <b>Notebook em oferta!</b>" if n_novos == 1 else f"🔔 <b>{n_novos} notebooks na sua faixa!</b>"
+    novos = [o for o in todos if analise_chave(o) in novos_chaves]
+    n_novos = len(novos)
+    ideal = bool(preco_ideal) and any(o["preco"] <= preco_ideal for o in novos)
+    if ideal:
+        cab = f"🔥 <b>Oferta abaixo de {_brl(preco_ideal)}!</b>"
+    elif n_novos == 1:
+        cab = "🔔 <b>Notebook em oferta!</b>"
+    else:
+        cab = f"🔔 <b>{n_novos} notebooks na sua faixa!</b>"
 
     partes = [cab, ""]
 
@@ -111,34 +110,36 @@ def format_analise(ranking: dict, todos: list[dict], novos_urls: set) -> str:
     potente = ranking.get("mais_potente")
     barato = ranking.get("mais_barato")
 
+    def linha(o):
+        return _linha_oferta(o, analise_chave(o) in novos_chaves, preco_ideal)
+
     if melhor:
-        partes.append("🏆 <b>MELHOR CUSTO-BENEFÍCIO</b>")
-        partes.append(_linha_oferta(melhor, melhor["url"] in novos_urls))
-        partes.append("")
+        partes += ["🏆 <b>MELHOR CUSTO-BENEFÍCIO</b>", linha(melhor), ""]
 
     # Só mostra "mais potente" e "mais barato" se forem diferentes do melhor CB.
-    if potente and potente["url"] != (melhor or {}).get("url"):
-        partes.append("💪 <b>MAIS POTENTE</b>")
-        partes.append(_linha_oferta(potente, potente["url"] in novos_urls))
-        partes.append("")
-    if barato and barato["url"] not in {(melhor or {}).get("url"), (potente or {}).get("url")}:
-        partes.append("💵 <b>MAIS BARATO</b>")
-        partes.append(_linha_oferta(barato, barato["url"] in novos_urls))
-        partes.append("")
+    if potente and analise_chave(potente) != analise_chave(melhor or {"url": ""}):
+        partes += ["💪 <b>MAIS POTENTE</b>", linha(potente), ""]
+    if barato and analise_chave(barato) not in {
+        analise_chave(x) for x in (melhor, potente) if x
+    }:
+        partes += ["💵 <b>MAIS BARATO</b>", linha(barato), ""]
 
-    # Ranking completo (se houver mais de 1 candidato), resumido.
-    rank = ranking.get("ranking", [])
-    destaque_urls = {(melhor or {}).get("url"), (potente or {}).get("url"), (barato or {}).get("url")}
-    resto = [o for o in rank if o["url"] not in destaque_urls]
+    destaque = {analise_chave(x) for x in (melhor, potente, barato) if x}
+    resto = [o for o in ranking.get("ranking", []) if analise_chave(o) not in destaque]
     if resto:
         partes.append("📋 <b>Outras opções</b> (por custo-benefício):")
         for o in resto[:6]:
             cb = o.get("custo_beneficio")
             cb_txt = f" · R$ {cb:.0f}/pt".replace(".", ",") if cb else ""
             nome = html.escape(o["nome"][:48])
-            partes.append(f"• {nome} — {_brl(o['preco'])} · {o.get('score',0)}/100{cb_txt}")
+            fogo = "🔥" if preco_ideal and o["preco"] <= preco_ideal else "•"
+            url = html.escape(o["url"], quote=True)
+            partes.append(f'{fogo} <a href="{url}">{nome}</a> — {_brl(o["preco"])} · {o.get("score", 0)}/100{cb_txt}')
         partes.append("")
 
     partes.append("🆕 = novidade nesta verificação")
     partes.append("<i>Score é estimativa por tabela de specs, não benchmark real.</i>")
-    return "\n".join(partes)
+    msg = "\n".join(partes)
+    if len(msg) > LIMITE_TELEGRAM:
+        msg = msg[: LIMITE_TELEGRAM - 20].rsplit("\n", 1)[0] + "\n…(cortado)"
+    return msg
