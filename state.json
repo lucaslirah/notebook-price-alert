@@ -2,21 +2,80 @@
   "https://avell.com.br/storm-560-amd-ryzen-7-255-rtx5060": {
     "preco_notificado": 7999.0,
     "nome": "Avell STORM 560",
-    "menor_preco": 7999.0
+    "menor_preco": 7999.0,
+    "sumiu_em": "2026-11-24T12:44:42+00:00"
   },
   "https://www.kabum.com.br/produto/1033358/notebook-asus-tuf-gaming-f16-intel-core-i5-14a-geracao-16gb-ram-rtx-5060-ssd-512gb-tela-16-led-fhd-nivel-ips-windows-11-home-jaeger-gray": {
     "preco_notificado": 8499.15,
     "nome": " Notebook Asus Tuf Gaming F16, Intel Core i5 14a Geração, 16GB RAM, RTX 5060, SSD 512GB, Tela 16\" LED Fhd+ Nível Ips, WINDOWS 11 Home, Jaeger Gray",
-    "menor_preco": 8414.15
+    "menor_preco": 8414.15,
+    "sumiu_em": "2026-11-24T12:44:42+00:00"
   },
   "https://www.kabum.com.br/produto/1022890/notebook-gamer-lenovo-loq-e-15irx11-intel-core-i5-13450hx-16gb-512gb-ssd-rtx-5060-windows-11-15-6-83ux0006bo-luna-grey": {
     "preco_notificado": 7567.12,
     "nome": " Notebook Gamer Lenovo Loq-e 15irx11 Intel Core i5-13450hx 16gb 512gb SSD RTX 5060 WINDOWS 11 15.6\" - 83ux0006bo Luna Grey",
-    "menor_preco": 7567.12
+    "menor_preco": 7567.12,
+    "sumiu_em": "2026-11-24T12:44:42+00:00"
   },
   "https://www.kabum.com.br/produto/1034620/notebook-gamer-lenovo-loq-intel-core-i5-13450hx-16gb-ram-rtx-5060-8gb-ssd-512gb-tela-15-6-fhd-ips-144hz-windows-11": {
     "preco_notificado": 8421.68,
     "nome": " Notebook Gamer Lenovo Loq Intel Core i5-13450hx, 16GB RAM, RTX 5060 8GB, SSD 512GB, Tela 15.6\" Fhd Ips 144hz, WINDOWS 11",
+    "menor_preco": 8421.68,
+    "sumiu_em": "2026-11-24T12:44:42+00:00"
+  },
+  "https://quenotebookcomprar.com.br/lenovo-loq-essential-83ux0006bo": {
+    "preco_notificado": 7395.0,
+    "nome": "Lenovo LOQ Essential 83UX0006BO",
+    "menor_preco": 7395.0
+  },
+  "https://quenotebookcomprar.com.br/acer-aspire-nitro-v16-anv16-i31-791t": {
+    "preco_notificado": 8099.0,
+    "nome": "Acer Aspire Nitro V16 ANV16-I31-791T",
+    "menor_preco": 8099.0
+  },
+  "https://quenotebookcomprar.com.br/acer-aspire-nitro-v16-anv16-i31-70z0": {
+    "preco_notificado": 8189.0,
+    "nome": "Acer Aspire Nitro V16 ANV16-I31-70Z0",
+    "menor_preco": 8189.0
+  },
+  "https://benchpromos.com.br/notebooks/notebook-lenovo-loqe-15irx11-intel-core-i513450hx-rtx-5060-16gb-ram-512gb-ssd-windows-11": {
+    "preco_notificado": 8421.68,
+    "nome": "Notebook Lenovo LOQ-e 15IRX11 Intel Core i5-13450HX RTX 5060 16GB RAM 512GB SSD Windows 11",
     "menor_preco": 8421.68
+  },
+  "https://benchpromos.com.br/notebooks/notebook-avell-storm-560-amd-ryzen-7-255-rtx-5060": {
+    "preco_notificado": 8499.0,
+    "nome": "Notebook Avell STORM 560 AMD Ryzen 7 255 RTX 5060",
+    "menor_preco": 8499.0
+  },
+  "https://quenotebookcomprar.com.br/asus-tuf-gaming-f16-fx608jmi-tu325": {
+    "preco_notificado": 8499.0,
+    "nome": "ASUS TUF Gaming F16 FX608JMI-TU325",
+    "menor_preco": 8499.0
+  },
+  "https://benchpromos.com.br/notebooks/notebook-avell-ion-a70-black-intel-core-ultra-7-155h-rtx-5060": {
+    "preco_notificado": 8999.0,
+    "nome": "Notebook Avell Ion A70 Black Intel Core Ultra 7 155H RTX 5060",
+    "menor_preco": 8999.0
+  },
+  "https://quenotebookcomprar.com.br/acer-predator-helios-neo-16-ai-phn16-73-76tf": {
+    "preco_notificado": 9359.0,
+    "nome": "Acer Predator Helios Neo 16 AI PHN16-73-76TF",
+    "menor_preco": 9359.0
+  },
+  "https://benchpromos.com.br/notebooks/notebook-avell-storm-560-i914900hx-rtx-5060": {
+    "preco_notificado": 9499.0,
+    "nome": "Notebook Avell STORM 560 i9-14900HX RTX 5060",
+    "menor_preco": 9499.0
+  },
+  "https://benchpromos.com.br/notebooks/notebook-avell-ion-a65-intel-core-i9-14900hx-rtx-5060": {
+    "preco_notificado": 9499.0,
+    "nome": "Notebook Avell ION A65 Intel Core i9 14900HX RTX 5060",
+    "menor_preco": 9499.0
+  },
+  "https://benchpromos.com.br/notebooks/notebook-asus-tuf-gaming-f16-fx608jmitu321w-intel-core-i5-14450hx-rtx-5060-16gb-ram-512gb-ssd-windows-11-home": {
+    "preco_notificado": 9899.1,
+    "nome": "Notebook ASUS TUF Gaming F16 FX608JMI-TU321W Intel Core i5 14450HX RTX 5060 16GB RAM 512GB SSD Windows 11 Home",
+    "menor_preco": 9899.1
   }
 }
